@@ -128,17 +128,29 @@ impl GuarddMap {
         }
     }
     pub fn put_obstacles(&self) -> usize {
-        (0..=self.arena.dimensions.y)
-            .map(|y| (0..=self.arena.dimensions.x).map(move |x| Position{x,y}))
-            .flatten()
-            .filter(|p| !self.arena.obstacles.contains(p))
-            .filter(|p| self.guard_start != *p)
-            .filter(|p| {
-                let mut map = self.clone();
-                // println!("Checking progress {:.2}%", (p.y as f64 / map.arena.dimensions.y as f64) * 100.0);
-                map.arena.obstacles.insert(*p);
-                map.move_guard().is_err()
-            }).count()
+        let mut guard_position = self.guard_start.clone();
+        let mut guard_direction = self.guard_direction.clone();
+        let mut possible_obstacles = Vec::new();
+        loop {
+            if self.guard_start != guard_position+&guard_direction {
+                let mut possible_map = self.clone();
+                possible_map.arena.obstacles.insert(guard_position+&guard_direction);
+                possible_map.guard_start = guard_position;
+                possible_map.guard_direction = guard_direction;
+                match possible_map.move_guard() {
+                    Ok(()) => {},
+                    Err(InfiniteLoopError {}) => { possible_obstacles.push(guard_position) },
+                }
+            }
+            if self.arena.obstacles.contains(&(guard_position+&guard_direction)){
+                guard_direction = guard_direction.turn_right();
+            } else {
+                guard_position+=&guard_direction;
+            }
+            if !self.arena.contains(guard_position){
+                return possible_obstacles.into_iter().collect::<HashSet<_>>().len()
+            }
+        }
     }
 }
 impl<Reader> From<Reader> for GuarddMap
