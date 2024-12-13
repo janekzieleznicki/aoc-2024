@@ -6,6 +6,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::{Add, AddAssign};
 use std::path::PathBuf;
+use std::cell::RefCell;
 use std::time::SystemTime;
 
 fn main() {
@@ -68,14 +69,14 @@ struct InfiniteLoopError {}
 struct GuarddMap {
     guard_start: Position,
     guard_direction: Direction,
-    arena: Arena,
+    arena: RefCell<Arena>,
     visited: HashSet<Position>,
 }
 impl Display for GuarddMap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for y in 0..=self.arena.dimensions.y {
-            for x in 0..=self.arena.dimensions.x {
-                if self.arena.obstacles.contains(&Position{x,y}){
+        for y in 0..=self.arena.borrow().dimensions.y {
+            for x in 0..=self.arena.borrow().dimensions.x {
+                if self.arena.borrow().obstacles.contains(&Position{x,y}){
                     write!(f, "#")?;
                 } else if self.guard_start == (Position{x,y}) {
                     write!(f, "^")?;
@@ -96,10 +97,10 @@ impl GuarddMap {
         let mut guard_position = self.guard_start.clone();
         let mut guard_direction = self.guard_direction.clone();
         loop {
-            if !self.arena.contains(guard_position){
+            if !self.arena.borrow().contains(guard_position){
                 return self.visited.len()
             }
-            if self.arena.obstacles.contains(&(guard_position.clone()+&guard_direction)){
+            if self.arena.borrow().obstacles.contains(&(guard_position.clone()+&guard_direction)){
                 guard_direction = guard_direction.turn_right();
             } else {
                 self.visited.insert(guard_position.clone());
@@ -113,10 +114,10 @@ impl GuarddMap {
         let mut guard_direction = self.guard_direction.clone();
         let mut path = Vec::new();
         loop {
-            if !self.arena.contains(guard_position){
+            if !self.arena.borrow().contains(guard_position){
                 return Ok(())
             }
-            if self.arena.obstacles.contains(&(guard_position.clone()+&guard_direction)){
+            if self.arena.borrow().obstacles.contains(&(guard_position.clone()+&guard_direction)){
                 guard_direction = guard_direction.turn_right();
             } else {
                 guard_position+=&guard_direction;
@@ -134,7 +135,7 @@ impl GuarddMap {
         loop {
             if self.guard_start != guard_position+&guard_direction {
                 let mut possible_map = self.clone();
-                possible_map.arena.obstacles.insert(guard_position+&guard_direction);
+                (&mut possible_map.arena.borrow_mut()).obstacles.insert(guard_position+&guard_direction);
                 possible_map.guard_start = guard_position;
                 possible_map.guard_direction = guard_direction;
                 match possible_map.move_guard() {
@@ -142,12 +143,12 @@ impl GuarddMap {
                     Err(InfiniteLoopError {}) => { possible_obstacles.push(guard_position) },
                 }
             }
-            if self.arena.obstacles.contains(&(guard_position+&guard_direction)){
+            if self.arena.borrow().obstacles.contains(&(guard_position+&guard_direction)){
                 guard_direction = guard_direction.turn_right();
             } else {
                 guard_position+=&guard_direction;
             }
-            if !self.arena.contains(guard_position){
+            if !self.arena.borrow().contains(guard_position){
                 return possible_obstacles.into_iter().collect::<HashSet<_>>().len()
             }
         }
@@ -179,7 +180,7 @@ where
         Self{
             guard_start,
             guard_direction,
-            arena,
+            arena: RefCell::new(arena),
             visited: HashSet::new()
         }
     }
