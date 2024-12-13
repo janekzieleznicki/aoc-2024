@@ -220,33 +220,33 @@ mod tests {
     #[test]
     fn test_printing_press() {
         let _reader = read_input("example-input.txt");
-        let mut map = GuarddMap::from(_reader);
-        map.arena.obstacles.insert(Position{x:3, y:6});
-        println!("Map printing press:\n{map}");
+        let map = GuarddMap::from(_reader);
+        map.arena.borrow_mut().obstacles.insert(Position{x:3, y:6});
+        // println!("Map printing press:\n{map}");
         assert_eq!(map.move_guard(), Err(InfiniteLoopError {}));
     }
     #[test]
     fn test_failed_suit_prototypes() {
         let _reader = read_input("example-input.txt");
-        let mut map = GuarddMap::from(_reader);
-        map.arena.obstacles.insert(Position{x:6, y:7});
-        println!("Map failed suit:\n{map}");
+        let map = GuarddMap::from(_reader);
+        map.arena.borrow_mut().obstacles.insert(Position{x:6, y:7});
+        // println!("Map failed suit:\n{map}");
         assert_eq!(map.move_guard(), Err(InfiniteLoopError {}));
     }
 
     #[test]
     fn test_tank_glue() {
         let _reader = read_input("example-input.txt");
-        let mut map = GuarddMap::from(_reader);
-        map.arena.obstacles.insert(Position{x:7, y:9});
-        println!("Map tank glue:\n{map}");
+        let map = GuarddMap::from(_reader);
+        map.arena.borrow_mut().obstacles.insert(Position{x:7, y:9});
+        // println!("Map tank glue:\n{map}");
         assert_eq!(map.move_guard(), Err(InfiniteLoopError {}));
     }
     #[test]
     fn test_put_obstacles() {
 
         let _reader = read_input("example-input.txt");
-        let mut map = GuarddMap::from(_reader);
+        let  map = GuarddMap::from(_reader);
         assert_eq!(map.put_obstacles(), 6);
     }
 }
