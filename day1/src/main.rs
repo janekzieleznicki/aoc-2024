@@ -28,7 +28,7 @@ where Reader: ?Sized + BufRead{
 }
 pub fn similarity_score<Reader>(reader: &mut Reader) -> usize
 where Reader: ?Sized + BufRead{
-    let (mut left, mut right): (Vec<_>, Vec<_>) = reader.lines().into_iter()
+    let (left, right): (Vec<_>, Vec<_>) = reader.lines().into_iter()
         .filter_map(|line| line.ok())
         .map(|line| {
             let mut split = line.split_whitespace();

@@ -176,13 +176,18 @@ fn read_input(name: &str) -> BufReader<File> {
 #[cfg(test)]
 mod tests {
     use crate::{PrintQueue, read_input};
-    use std::cmp::Ordering::{Greater, Less};
+    use std::cmp::Ordering::{Greater};
 
     #[test]
     fn test_part1() {
         let reader = read_input("example-input.txt");
         let print_queue = PrintQueue::from(reader);
         assert_eq!(print_queue.middle_pages(), 143);
+    }
+    #[test]
+    fn test_part2() {
+        let reader = read_input("example-input.txt");
+        let print_queue = PrintQueue::from(reader);
         assert_eq!(print_queue.order_two_pages(&75, &97), Greater);
         assert_eq!(print_queue.order_two_pages(&13, &29), Greater);
         assert_eq!(print_queue.order_two_pages(&13, &75), Greater);
@@ -195,9 +200,4 @@ mod tests {
         ]);
         assert_eq!(print_queue.incorrect_updates(), 123);
     }
-    // #[test]
-    // fn test_part2() {
-    //     let reader = read_input("example-input.txt");
-    //     todo!();
-    // }
 }
