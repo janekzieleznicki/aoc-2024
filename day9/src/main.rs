@@ -113,26 +113,6 @@ impl DiskMap {
         }
         None
     }
-    pub fn merge_free_spaces(&mut self){
-        loop {
-            for window in self.fragments.windows(2){
-                match window {
-                    &[Fragment::Free {blocks: mut free_first }, Fragment::Free { blocks: mut free_second }] => {
-                        free_first+=free_second;
-                        free_second=0;
-                    }
-                    _ => {}
-                }
-            }
-            match self.fragments.iter().position(|frag|match frag{
-                Fragment::Free { blocks: 0} => true,
-                _ => false
-            }){
-                None => {break}
-                Some(pos) => {self.fragments.remove(pos);}
-            }
-        }
-    }
     pub fn defragment(&mut self) -> usize {
         while let Some((file_idx, free_idx)) = self.can_move_file() {
             let mut file = self.fragments[file_idx];

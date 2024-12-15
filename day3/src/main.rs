@@ -50,8 +50,8 @@ where
         let cleared = Regex::new(r"(?:don't\(\))([\s\S]+?)(?:do\(\))")
             .unwrap()
             .replace_all(&buffer, "");
-        dbg!(&cleared);
-        return compute(&cleared);
+        // dbg!(&cleared);
+        compute(&cleared)
     }
 }
 #[cfg(test)]

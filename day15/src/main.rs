@@ -441,11 +441,11 @@ mod tests {
     fn test_part2() {
         let reader = read_input("example-input.txt");
         let mut warehouse = WideWarehouse::from(&Warehouse::from(reader));
-        println!("Warehous:\n{}", warehouse);
+        // println!("Warehous:\n{}", warehouse);
         while let Some(_) = warehouse.move_robot() {
             // println!("Robot ar {position:?} warehourse:\n{warehouse}")
         }
-        println!("Warehouse:\n{}", warehouse);
+        // println!("Warehouse:\n{}", warehouse);
         assert_eq!(warehouse.gps_sum(), 9021);
     }
     #[test]
@@ -459,14 +459,10 @@ mod tests {
 #######
 
 <vv<<^^<<^^"#;
-        println!(
-            "Parsed warehouse: \n{}\n\n",
-            Warehouse::from(input.as_bytes())
-        );
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot ar {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot ar {position:?} warehourse:\n{warehouse}")
         }
     }
 
@@ -481,9 +477,9 @@ mod tests {
 <<"#;
 
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot at {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot at {position:?} warehourse:\n{warehouse}")
         }
         assert_eq!(warehouse.gps_sum(), 406);
     }
@@ -499,9 +495,9 @@ mod tests {
 
 <v<<^"#;
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot at {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot at {position:?} warehourse:\n{warehouse}")
         }
         assert_eq!(warehouse.gps_sum(), 509);
     }
@@ -516,9 +512,9 @@ mod tests {
 
 <v<^"#;
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot at {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot at {position:?} warehourse:\n{warehouse}")
         }
         assert_eq!(warehouse.gps_sum(), 511);
     }
@@ -534,9 +530,9 @@ mod tests {
 
 <vv<<^"#;
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot at {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot at {position:?} warehourse:\n{warehouse}")
         }
         assert_eq!(warehouse.gps_sum(), 816);
     }
@@ -557,9 +553,9 @@ mod tests {
 
 v<vv<<^^^^^"#;
         let mut warehouse = WideWarehouse::from(&Warehouse::from(input.as_bytes()));
-        println!("Warehouse:\n{}", warehouse);
-        while let Some(position) = warehouse.move_robot() {
-            println!("Robot at {position:?} warehourse:\n{warehouse}")
+        // println!("Warehouse:\n{}", warehouse);
+        while let Some(_position) = warehouse.move_robot() {
+            // println!("Robot at {position:?} warehourse:\n{warehouse}")
         }
         assert_eq!(warehouse.gps_sum(), 2339);
     }

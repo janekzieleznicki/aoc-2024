@@ -120,7 +120,7 @@ impl<Reader> From<Reader> for TopoMap
 where
     Reader: BufRead,
 {
-    fn from(mut reader: Reader) -> Self {
+    fn from(reader: Reader) -> Self {
         let mut elevations = Vec::new();
         let mut summits = Vec::new();
         let mut trailheads = Vec::new();

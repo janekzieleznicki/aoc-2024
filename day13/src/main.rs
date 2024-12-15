@@ -1,7 +1,7 @@
 #![feature(unsigned_signed_diff)]
 
-use std::cmp::{min, PartialEq};
 use regex::Regex;
+use std::cmp::PartialEq;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
@@ -37,19 +37,18 @@ struct ClawMachine {
     button_a: Button,
     button_b: Button,
     prize: Position,
-    cost: usize
 }
 
 impl ClawMachine {
     fn cheapest_combination(&mut self) -> Option<isize> {
         // solve for B
-        let B = (self.button_a.y*self.prize.x - self.button_a.x*self.prize.y) /
+        let b_pressed = (self.button_a.y*self.prize.x - self.button_a.x*self.prize.y) /
             (self.button_a.y*self.button_b.x - self.button_a.x*self.button_b.y);
         // solve for A
-        let A = (self.prize.x - self.button_b.x*B) / self.button_a.x;
-        let end_pos = Position{x: B*self.button_b.x + A*self.button_a.x, y: B*self.button_b.y + A*self.button_a.y};
+        let a_pressed = (self.prize.x - self.button_b.x* b_pressed) / self.button_a.x;
+        let end_pos = Position{x: b_pressed *self.button_b.x + a_pressed *self.button_a.x, y: b_pressed *self.button_b.y + a_pressed *self.button_a.y};
         if self.prize == end_pos{
-            return Some(B*1+A*3)
+            return Some(b_pressed *1+ a_pressed *3)
         }
         None
     }
@@ -87,7 +86,6 @@ where
                         x: cap["px"].parse::<isize>().unwrap(),
                         y: cap["py"].parse::<isize>().unwrap(),
                     },
-                    cost: usize::MAX,
                 })
                 .collect(),
         }
@@ -101,20 +99,15 @@ fn read_input(name: &str) -> BufReader<File> {
 }
 #[cfg(test)]
 mod tests {
-
     use crate::{read_input, Machines};
 
     #[test]
     fn test_part1() {
         let _reader = read_input("example-input.txt");
         let mut machines = Machines::from(_reader);
-        println!("First machine");
         assert_eq!(machines.machines[1].cheapest_combination(), None);
-        println!("Second machine");
         assert_eq!(machines.machines[3].cheapest_combination(), None);
-        println!("Third machine");
         assert_eq!(machines.machines[0].cheapest_combination(), Some(280));
-        println!("Forth machine");
         assert_eq!(machines.machines[2].cheapest_combination(), Some(200));
     }
     #[test]
@@ -126,13 +119,9 @@ mod tests {
             m.prize.x += 10000000000000;
             m.prize.y += 10000000000000;
         });
-        println!("First machine");
         assert_eq!(machines.machines[1].cheapest_combination(), Some(459236326669));
-        println!("Second machine");
         assert_eq!(machines.machines[3].cheapest_combination(), Some(416082282239));
-        println!("Third machine");
         assert_eq!(machines.machines[0].cheapest_combination(), None);
-        println!("Forth machine");
         assert_eq!(machines.machines[2].cheapest_combination(), None);
 
     }

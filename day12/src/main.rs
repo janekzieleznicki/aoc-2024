@@ -1,6 +1,5 @@
 #![feature(unsigned_signed_diff)]
 
-use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -34,9 +33,6 @@ impl Display for Field {
     }
 }
 impl Field {
-    pub fn occupies(&self, pos: Position) -> bool {
-        self.occupies.contains(&pos)
-    }
     pub fn add(&mut self, pos: Position) {
         match self.occupies.len() {
             0 => {
@@ -130,11 +126,11 @@ impl Farm {
             (Some(idx), None) => self.fields[idx].add(pos),
             (None, Some(idx)) => self.fields[idx].add(pos),
             (Some(left), Some(right)) if left == right => self.fields[left].add(pos),
-            (Some(mut left),(Some(mut right))) => {
+            (Some(mut left),Some(mut right)) => {
                 if right < left{
                     swap(&mut left,&mut right);
                 }
-                let mut right = self.fields.remove(right);
+                let right = self.fields.remove(right);
                 self.fields[left].merge_at(right, pos)
             },
         }
@@ -153,7 +149,7 @@ impl<Reader> From<Reader> for Farm
 where
     Reader: BufRead,
 {
-    fn from(mut reader: Reader) -> Self {
+    fn from(reader: Reader) -> Self {
         let mut farm = Farm::default();
         for (y, line) in reader.lines().map_while(|line| line.ok()).enumerate() {
             for (x, char) in line.chars().enumerate() {
@@ -172,7 +168,7 @@ fn read_input(name: &str) -> BufReader<File> {
 }
 #[cfg(test)]
 mod tests {
-    use crate::{Farm};
+    use crate::Farm;
     #[test]
     fn test_example1() {
         let example = r"AAAA

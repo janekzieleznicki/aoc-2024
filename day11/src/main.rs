@@ -1,6 +1,6 @@
 #![feature(unsigned_signed_diff)]
 
-use std::collections::{HashMap, LinkedList};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -92,8 +92,7 @@ fn read_input(name: &str) -> BufReader<File> {
 }
 #[cfg(test)]
 mod tests {
-    use crate::{Grid, Stone, read_input};
-    use std::io::BufReader;
+    use crate::{read_input, Grid, Stone};
     #[test]
     fn test_helpers() {
         assert_eq!(Stone::digits_count(11221), 5);

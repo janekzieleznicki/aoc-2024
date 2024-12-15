@@ -2,7 +2,6 @@
 
 use regex::Regex;
 use std::collections::HashMap;
-use std::collections::hash_map::Entry;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -118,12 +117,6 @@ impl BathroomSecurity {
             })
             .fold(1, |acc, count| acc * count)
     }
-    fn quadrant_count(&self, quadrant: &Quadrant) -> usize {
-        self.robots
-            .iter()
-            .filter(|robot| quadrant.contains(&robot.position))
-            .count()
-    }
 
     pub fn is_christmas_tree(&self) -> bool {
         // Find friendly robot
@@ -196,7 +189,7 @@ impl<Reader> From<Reader> for BathroomSecurity
 where
     Reader: BufRead,
 {
-    fn from(mut reader: Reader) -> Self {
+    fn from(reader: Reader) -> Self {
         let reg = Regex::new(r"^p=(?<px>\d+),(?<py>\d+) v=(?<vx>-?\d+),(?<vy>-?\d+)$").unwrap();
         BathroomSecurity {
             robots: reader
@@ -228,24 +221,17 @@ fn read_input(name: &str) -> BufReader<File> {
 }
 #[cfg(test)]
 mod tests {
-
-    use crate::{BathroomSecurity, Position, read_input};
+    use crate::{read_input, BathroomSecurity, Position};
 
     #[test]
     fn test_part1() {
         let reader = read_input("example-input.txt");
         let mut ebhq = BathroomSecurity::from(reader).with_size(Position { x: 11, y: 7 });
-        for i in 0..100 {
-            // println!("After {i} seconds:\n{ebhq}");
+        for _i in 0..100 {
+            // println!("After {_i} seconds:\n{ebhq}");
             ebhq = ebhq.next();
         }
         // println!("{}", ebhq);
         assert_eq!(ebhq.safety_factor(), 12);
-    }
-
-    #[test]
-    fn test_part2() {
-        let reader = read_input("example-input.txt");
-        let ebhq = BathroomSecurity::from(reader).with_size(Position { x: 11, y: 7 });
     }
 }
