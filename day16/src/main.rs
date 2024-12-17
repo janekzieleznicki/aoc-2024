@@ -8,18 +8,21 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
 use std::path::PathBuf;
+use std::time::{Instant, SystemTime};
 
 fn main() {
     let _reader = read_input("puzzle-input.txt");
     let maze = Maze::from(_reader);
-    println!("Cheapest path: {}\nbest seats: {}", maze.cheapest_path(), maze.best_seats());
+    println!("Cheapest path: {}", maze.cheapest_path());
+    let start = Instant::now();
+    println!("Best seats: {} in {:?}", maze.best_seats(), start.elapsed());
 }
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 struct Position {
     x: usize,
     y: usize,
 }
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum Move {
     Up,
     Down,
@@ -194,12 +197,12 @@ impl Maze {
         })
     }
 
-    fn paths_from(&self, path: Vec<Raindeer>, max_cost: usize) -> Vec<Vec<Raindeer>> {
+    fn paths_from(&self, path: Vec<Raindeer>, cheapest_paths: &mut HashMap<Raindeer, usize>,max_cost: usize) -> Vec<Vec<Raindeer>> {
         let mut results = Vec::new();
         match path.last() {
             Some(last) => {
                 for next in self.next_nodes(*last) {
-                    if self.cheapest_path_from(next) > max_cost {
+                    if *cheapest_paths.entry(next).or_insert(self.cheapest_path_from(next)) > max_cost {
                         continue;
                     }
                     let mut new_path = path.clone();
@@ -207,7 +210,7 @@ impl Maze {
                     if next.pos == self.end {
                         results.push(new_path);
                     } else {
-                        results.append(&mut self.paths_from(new_path, max_cost));
+                        results.append(&mut self.paths_from(new_path, cheapest_paths,max_cost));
                     }
                 }
             }
@@ -219,12 +222,16 @@ impl Maze {
         // 1. Lets get cheapest path
         // 2. DFS for every path to end, which is just as cheap
         let best_cost = self.cheapest_path();
+        let mut cheapest_paths = HashMap::new();
+        let start = Raindeer {
+            pos: self.start,
+            orientation: Right,
+            cost: 0,
+        };
+        cheapest_paths.insert(start, best_cost);
         let paths = self.paths_from(
-            vec![Raindeer {
-                pos: self.start,
-                orientation: Right,
-                cost: 0,
-            }],
+            vec![start],
+            &mut cheapest_paths,
             best_cost,
         );
         paths.into_iter().flatten().map(|entry|entry.pos).collect::<HashSet<_>>().iter().count()
@@ -249,7 +256,7 @@ impl Maze {
         }
     }
 }
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Ord)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Ord, Hash)]
 struct Raindeer {
     pos: Position,
     orientation: Move,
