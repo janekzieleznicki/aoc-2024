@@ -13,7 +13,8 @@ use std::time::{Instant, SystemTime};
 fn main() {
     let _reader = read_input("puzzle-input.txt");
     let maze = Maze::from(_reader);
-    println!("Cheapest path: {}", maze.cheapest_path());
+    let start = Instant::now();
+    println!("Cheapest path: {} in {:?}", maze.cheapest_path(), start.elapsed());
     let start = Instant::now();
     println!("Best seats: {} in {:?}", maze.best_seats(), start.elapsed());
 }
@@ -197,12 +198,13 @@ impl Maze {
         })
     }
 
-    fn paths_from(&self, path: Vec<Raindeer>, cheapest_paths: &mut HashMap<Raindeer, usize>,max_cost: usize) -> Vec<Vec<Raindeer>> {
+    fn paths_from(&self, path: &Vec<Raindeer>, cheapest_paths: &mut HashMap<Raindeer, usize>,max_cost: usize) -> Vec<Vec<Raindeer>> {
         let mut results = Vec::new();
         match path.last() {
             Some(last) => {
                 for next in self.next_nodes(*last) {
                     if *cheapest_paths.entry(next).or_insert(self.cheapest_path_from(next)) > max_cost {
+                        // ignore this path
                         continue;
                     }
                     let mut new_path = path.clone();
@@ -210,7 +212,7 @@ impl Maze {
                     if next.pos == self.end {
                         results.push(new_path);
                     } else {
-                        results.append(&mut self.paths_from(new_path, cheapest_paths,max_cost));
+                        results.append(&mut self.paths_from(&new_path, cheapest_paths, max_cost));
                     }
                 }
             }
@@ -230,7 +232,7 @@ impl Maze {
         };
         cheapest_paths.insert(start, best_cost);
         let paths = self.paths_from(
-            vec![start],
+            &vec![start],
             &mut cheapest_paths,
             best_cost,
         );
