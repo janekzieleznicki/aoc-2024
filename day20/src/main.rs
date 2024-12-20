@@ -1,7 +1,7 @@
 #![feature(unsigned_signed_diff)]
 
 use std::cmp::{Ordering, PartialEq};
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -190,58 +190,26 @@ impl RaceCondition {
         }
         None
     }
-    fn valid_cheats(&self, start: &Position, cheat_duration: isize) -> Vec<Position> {
-        let mut positions = HashSet::new();
-        for diff_x in (-cheat_duration)..=cheat_duration {
-            for diff_y in (-cheat_duration)..=cheat_duration {
-                let end = start
-                    + &Position {
-                        x: diff_x,
-                        y: diff_y,
-                    };
-                if start.distance(&end) >= 2 && start.distance(&end) <= cheat_duration {
-                    positions.insert(end);
-                }
-            }
-        }
-        positions
-            .into_iter()
-            .filter(|pos| match self.at(*pos) {
-                Some(Tile::Path) => true,
-                Some(Tile::Start) => true,
-                Some(Tile::End) => true,
-                _ => false,
-            })
-            .collect()
-    }
 
-    fn cheat_saves(&self, jump_lenght: usize) -> HashMap<usize, usize> {
-        let mut costs = HashMap::new();
-        let best_path = self.best_path().unwrap();
-        for (idx, pos) in best_path.iter().enumerate() {
-            costs.insert(*pos, best_path.len() - idx);
-        }
+    fn cheat_saves(&self, jump_lenght: isize) -> HashMap<usize, usize> {
         let mut saves_count = HashMap::new();
-        let mut start_cost = best_path.len() as isize;
-        for start in best_path {
-            for end in self.valid_cheats(&start, jump_lenght as isize) {
-                match costs.get(&end) {
-                    Some(end_cost) => {
-                        let saves = start_cost - start.distance(&end) - *end_cost as isize;
-                        if saves > 0 {
-                            saves_count.insert((start, end), saves);
-                        }
+        let best_path = self.best_path().unwrap();
+        for (start_idx, start) in best_path.iter().enumerate() {
+            best_path[start_idx..]
+                .iter()
+                .enumerate()
+                .map(|(end_idx, end)| (end_idx, start.distance(end)))
+                .filter(|(_, dist)| dist <= &jump_lenght)
+                .for_each(|(end_idx, dist)| {
+                    let saves = end_idx as isize - dist;
+                    if saves > 0 {
+                        *saves_count
+                            .entry(saves as usize)
+                            .or_insert(0) += 1;
                     }
-                    None => {}
-                }
-            }
-            start_cost -= 1;
+                });
         }
-        let mut res_map = HashMap::new();
-        for ((_, _), saves) in saves_count {
-            *res_map.entry(saves as usize).or_insert(0usize) += 1;
-        }
-        res_map
+        saves_count
     }
 }
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Ord, Hash)]
