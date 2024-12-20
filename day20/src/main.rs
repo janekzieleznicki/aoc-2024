@@ -1,14 +1,12 @@
 #![feature(unsigned_signed_diff)]
 
 use std::cmp::{Ordering, PartialEq, max};
-use std::collections::hash_map::Entry;
-use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
+use std::collections::{BinaryHeap, HashMap};
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::ops::Add;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicUsize;
 use std::time::Instant;
 
 fn main() {
@@ -23,8 +21,8 @@ fn main() {
         save_count
             .iter()
             .filter_map(|(saves, count)| if *saves >= 100 { Some(count) } else { None })
-            .sum::<usize>()
-        , start.elapsed()
+            .sum::<usize>(),
+        start.elapsed()
     );
 
     let start = Instant::now();
@@ -34,8 +32,8 @@ fn main() {
         save_count
             .iter()
             .filter_map(|(saves, count)| if *saves >= 100 { Some(count) } else { None })
-            .sum::<usize>()
-        , start.elapsed()
+            .sum::<usize>(),
+        start.elapsed()
     );
 }
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -81,7 +79,6 @@ impl Add<&Position> for &Position {
         }
     }
 }
-struct EndUnreachable {}
 impl RaceCondition {
     fn at(&self, pos: Position) -> Option<&Tile> {
         if pos.x < 0 || pos.y < 0 {
@@ -138,136 +135,17 @@ impl RaceCondition {
                 None => false,
             })
     }
-    fn distance_from_end(
-        &self,
-        end: Position,
-        cost: usize,
-        mut path_costs: &mut HashMap<Position, usize>,
-    ) {
-        for next_pos in self.next_nodes(&end, |t| t == &Tile::Path || t == &Tile::Start) {
-            if !path_costs.contains_key(&next_pos) {
-                path_costs.insert(next_pos, cost + 1);
-                self.distance_from_end(next_pos, cost + 1, &mut path_costs);
-            }
-        }
-    }
 
-    fn path_costs(&self) -> HashMap<Position, usize> {
-        let mut costs: HashMap<Position, usize> = HashMap::new();
-        costs.insert(self.end, 0);
-        self.distance_from_end(self.end, 0, &mut costs);
-        // for (key, val) in costs.iter() {
-        //     println!("Time from {} : {}", key, val);
-        // }
-        costs
-    }
-    fn cheats_from(&self, pos: &Position) -> Vec<Position> {
-        self.next_nodes(pos, |t| t == &Tile::Wall)
-            .into_iter()
-            .map(|pos| {
-                self.next_nodes(&pos, |t| t == &Tile::Path || t == &Tile::End)
-                    .collect::<Vec<_>>()
-            })
-            .flatten()
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect()
-    }
-    fn cheats_from_local(
-        &self,
-        mut end_positions: &mut HashSet<(Position, Position, usize)>,
-        start: &Position,
-        intermediate: &Position,
-        cost: usize,
-    ) {
-        match cost {
-            0 => {}
-            _ => {
-                for next in self.next_nodes(intermediate, |t| t == &Tile::Path || t == &Tile::End) {
-                    if &next != start {
-                        end_positions.insert((*start, next, cost - 1));
-                    }
-                }
-                for next in self.next_nodes(intermediate, |t| t == &Tile::Wall) {
-                    self.cheats_from_local(end_positions, start, &next, cost - 1);
-                }
-            }
-        }
-    }
-    fn cheats_with_length(&self, picoseconds_left: usize) -> HashSet<(Position, Position, usize)> {
-        let mut end_positions = HashSet::new();
-        for pos in self
-            .map
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, tile)| match tile {
-                Tile::Path | Tile::Start => Some(self.pos_from_index(idx)),
-                _ => None,
-            })
-        {
-            self.cheats_from_local(&mut end_positions, &pos, &pos, picoseconds_left);
-        }
-        end_positions
-            .into_iter()
-            .filter_map(|(start, end, left)| match left {
-                x if x == picoseconds_left - 1 => None, //this is no cheat if we jump to next path
-                x => Some((start, end, picoseconds_left - x)),
-            })
-            .collect()
-    }
-    fn cheats(&self) -> HashSet<(Position, Position)> {
-        self.map
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, tile)| match tile {
-                Tile::Path | Tile::Start => Some(self.pos_from_index(idx)),
-                _ => None,
-            })
-            .map(|pos| {
-                self.cheats_from(&pos)
-                    .iter()
-                    .filter_map(|jump| match jump {
-                        j if j == &pos => None,
-                        _ => Some((pos, *jump)),
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .flatten()
-            .collect()
-    }
-    fn saves_exactly(&self, jump_lenght: usize, pico_saved: usize) -> usize {
-        let costs = self.path_costs();
-        let saved_time = |start: Position, end: Position, cost| {
-            let cost_start = costs.get(&start).unwrap();
-            let cost_end = costs.get(&end).unwrap();
-            if cost_start < cost_end {
-                None
-            } else {
-                if cost_start.abs_diff(*cost_end) < pico_saved {
-                    None
-                } else {
-                    Some(cost_start - cost_end - cost)
-                }
-            }
-        };
-        let cheats = self.cheats_with_length(jump_lenght);
-
-        cheats
-            .into_iter()
-            .filter_map(|(start, end, cost)| saved_time(start, end, cost))
-            .filter(|val| val == &pico_saved)
-            .count()
-    }
     fn reconstruct_path(
         came_from: &HashMap<Position, Position>,
         mut position: Position,
     ) -> Vec<Position> {
-        let mut path = VecDeque::new();
+        let mut path = vec![position];
         while let Some(pos) = came_from.get(&position) {
             position = *pos;
-            path.push_front(*pos)
+            path.push(*pos)
         }
-        path.into_iter().collect()
+        path.into_iter().rev().collect()
     }
     fn best_path(&self) -> Option<Vec<Position>> {
         let mut open_set = BinaryHeap::new();
@@ -311,7 +189,7 @@ impl RaceCondition {
         &self,
         valid_cheats: &mut HashMap<(Position, Position), usize>,
         costs: &HashMap<Position, usize>,
-        mut arrival_time: &mut HashMap<Position, usize>,
+        arrival_time: &mut HashMap<Position, usize>,
         start: &Position,
         cheat_duration: usize,
         intermediate: &Position,
@@ -320,13 +198,18 @@ impl RaceCondition {
         match self.at(*intermediate) {
             Some(Tile::Path) | Some(Tile::End) => {
                 if intermediate != start {
-                    let save = *costs.get(start).unwrap() as isize
-                        - cheat_duration as isize
-                        - *costs.get(intermediate).unwrap() as isize;
-                    if save > 0 {
-                        match valid_cheats.entry((*start, *intermediate)).or_insert(0) {
-                            x => *x = max(*x, save as usize),
+                    match (costs.get(start), costs.get(intermediate)) {
+                        (Some(start_cost), Some(intermediate_cost)) => {
+                            let save = *start_cost as isize
+                                - cheat_duration as isize
+                                - *intermediate_cost as isize;
+                            if save > 0 {
+                                match valid_cheats.entry((*start, *intermediate)).or_insert(0) {
+                                    x => *x = max(*x, save as usize),
+                                }
+                            }
                         }
+                        _ => {}
                     }
                 }
             }
@@ -361,11 +244,14 @@ impl RaceCondition {
         }
     }
     fn cheat_saves(&self, jump_lenght: usize) -> HashMap<usize, usize> {
-        let costs = self.path_costs();
+        let mut costs = HashMap::new();
+        let best_path = self.best_path().unwrap();
+        for (idx, pos) in best_path.iter().enumerate() {
+            costs.insert(*pos, best_path.len() - idx);
+        }
         let mut saves_count = HashMap::new();
         {
-            for pos in self.best_path().unwrap() {
-
+            for pos in best_path {
                 self.count_valid_cheats(
                     &mut saves_count,
                     &costs,
@@ -449,24 +335,12 @@ mod tests {
     fn test_part1() {
         let _reader = read_input("example-input.txt");
         let race_condition = RaceCondition::from(_reader);
-        assert_eq!(race_condition.path_costs().len(), 85);
-        assert_eq!(race_condition.saves_exactly(2, 64), 1);
-        assert_eq!(race_condition.saves_exactly(2, 40), 1);
-        assert_eq!(race_condition.saves_exactly(2, 38), 1);
-        assert_eq!(race_condition.saves_exactly(2, 20), 1);
-        assert_eq!(race_condition.saves_exactly(2, 12), 3);
-        assert_eq!(race_condition.saves_exactly(2, 10), 2);
-        assert_eq!(race_condition.saves_exactly(2, 8), 4);
-        assert_eq!(race_condition.saves_exactly(2, 6), 2);
-        assert_eq!(race_condition.saves_exactly(2, 4), 14);
-        assert_eq!(race_condition.saves_exactly(2, 2), 14);
-
         let save_count = race_condition.cheat_saves(2);
-        let mut sorted = save_count.iter().collect::<Vec<_>>();
-        sorted.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
-        for (key, value) in sorted.iter() {
-            println!("There are {value} cheats that save {key:?} picoseconds.")
-        }
+        // let mut sorted = save_count.iter().collect::<Vec<_>>();
+        // sorted.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
+        // for (key, value) in sorted.iter() {
+        //      println!("There are {value} cheats that save {key:?} picoseconds.")
+        // }
         assert_eq!(1, save_count[&64]);
         assert_eq!(1, save_count[&40]);
         assert_eq!(1, save_count[&38]);
@@ -483,11 +357,11 @@ mod tests {
         let _reader = read_input("example-input.txt");
         let race_condition = RaceCondition::from(_reader);
         let save_count = race_condition.cheat_saves(20);
-        let mut sorted = save_count.iter().collect::<Vec<_>>();
-        sorted.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
-        for (key, value) in sorted.iter() {
-            println!("There are {value} cheats that save {key:?} picoseconds.")
-        }
+        // let mut sorted = save_count.iter().collect::<Vec<_>>();
+        // sorted.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
+        // for (key, value) in sorted.iter() {
+        //      println!("There are {value} cheats that save {key:?} picoseconds.")
+        // }
 
         assert_eq!(3, save_count[&76]);
         assert_eq!(4, save_count[&74]);
@@ -502,7 +376,6 @@ mod tests {
         assert_eq!(12, save_count[&66]);
         assert_eq!(19, save_count[&64]);
         assert_eq!(20, save_count[&62]);
-
 
         assert_eq!(23, save_count[&60]);
         assert_eq!(25, save_count[&58]);
