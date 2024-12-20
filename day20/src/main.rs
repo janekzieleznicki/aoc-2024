@@ -1,7 +1,7 @@
 #![feature(unsigned_signed_diff)]
 
-use std::cmp::{Ordering, PartialEq, max};
-use std::collections::{BinaryHeap, HashMap};
+use std::cmp::{Ordering, PartialEq};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -77,6 +77,11 @@ impl Add<&Position> for &Position {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
         }
+    }
+}
+impl Position {
+    fn distance(&self, other: &Position) -> isize {
+        (self.x - other.x).abs() + (self.y - other.y).abs()
     }
 }
 impl RaceCondition {
@@ -185,64 +190,31 @@ impl RaceCondition {
         }
         None
     }
-    fn count_valid_cheats(
-        &self,
-        valid_cheats: &mut HashMap<(Position, Position), usize>,
-        costs: &HashMap<Position, usize>,
-        arrival_time: &mut HashMap<Position, usize>,
-        start: &Position,
-        cheat_duration: usize,
-        intermediate: &Position,
-        cheat_time_left: usize,
-    ) {
-        match self.at(*intermediate) {
-            Some(Tile::Path) | Some(Tile::End) => {
-                if intermediate != start {
-                    match (costs.get(start), costs.get(intermediate)) {
-                        (Some(start_cost), Some(intermediate_cost)) => {
-                            let save = *start_cost as isize
-                                - cheat_duration as isize
-                                - *intermediate_cost as isize;
-                            if save > 0 {
-                                match valid_cheats.entry((*start, *intermediate)).or_insert(0) {
-                                    x => *x = max(*x, save as usize),
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            _ => {}
-        };
-        match cheat_time_left {
-            0 => {}
-            _ => {
-                for next in self.next_nodes(intermediate, |t| {
-                    t == &Tile::Wall || t == &Tile::Path || t == &Tile::End || t == &Tile::Start {}
-                }) {
-                    match arrival_time.get(&next) {
-                        Some(prev_time) if prev_time <= &cheat_duration => {
-                            // this is a new slower cheat, ignore it
-                            continue;
-                        }
-                        _ => {
-                            arrival_time.insert(next, cheat_duration);
-                            self.count_valid_cheats(
-                                valid_cheats,
-                                &costs,
-                                arrival_time,
-                                start,
-                                cheat_duration + 1,
-                                &next,
-                                cheat_time_left - 1,
-                            );
-                        }
-                    }
+    fn valid_cheats(&self, start: &Position, cheat_duration: isize) -> Vec<Position> {
+        let mut positions = HashSet::new();
+        for diff_x in (-cheat_duration)..=cheat_duration {
+            for diff_y in (-cheat_duration)..=cheat_duration {
+                let end = start
+                    + &Position {
+                        x: diff_x,
+                        y: diff_y,
+                    };
+                if start.distance(&end) >= 2 && start.distance(&end) <= cheat_duration {
+                    positions.insert(end);
                 }
             }
         }
+        positions
+            .into_iter()
+            .filter(|pos| match self.at(*pos) {
+                Some(Tile::Path) => true,
+                Some(Tile::Start) => true,
+                Some(Tile::End) => true,
+                _ => false,
+            })
+            .collect()
     }
+
     fn cheat_saves(&self, jump_lenght: usize) -> HashMap<usize, usize> {
         let mut costs = HashMap::new();
         let best_path = self.best_path().unwrap();
@@ -250,22 +222,24 @@ impl RaceCondition {
             costs.insert(*pos, best_path.len() - idx);
         }
         let mut saves_count = HashMap::new();
-        {
-            for pos in best_path {
-                self.count_valid_cheats(
-                    &mut saves_count,
-                    &costs,
-                    &mut HashMap::new(),
-                    &pos,
-                    0,
-                    &pos,
-                    jump_lenght,
-                );
+        let mut start_cost = best_path.len() as isize;
+        for start in best_path {
+            for end in self.valid_cheats(&start, jump_lenght as isize) {
+                match costs.get(&end) {
+                    Some(end_cost) => {
+                        let saves = start_cost - start.distance(&end) - *end_cost as isize;
+                        if saves > 0 {
+                            saves_count.insert((start, end), saves);
+                        }
+                    }
+                    None => {}
+                }
             }
+            start_cost -= 1;
         }
         let mut res_map = HashMap::new();
         for ((_, _), saves) in saves_count {
-            *res_map.entry(saves).or_insert(0) += 1;
+            *res_map.entry(saves as usize).or_insert(0usize) += 1;
         }
         res_map
     }
